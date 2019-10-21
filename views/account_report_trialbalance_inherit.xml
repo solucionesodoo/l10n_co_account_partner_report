@@ -52,16 +52,25 @@
 							<span t-esc="account['code']" style="color:grey !important;"/>
 						</td>
 
-						<td t-if="account['with_partner']==False" class="text-left">							<span t-att-style="style" t-esc="account['name']"/>
+						<td t-if="account['with_partner']==False" class="text-left">
+							<span t-att-style="style" t-esc="account['name']"/>
 						</td>
 
 						<td t-if="account['with_partner']==True" class="text-left">
 							<span style="color:grey !important;" t-esc="account['name']"/>
 						</td>
 
-						<td class="text-left" t-if="account['with_partner']==False">
+
+
+
+						<td class="text-left" t-if="(account['with_partner']==False) and (account['decimal_precision'] == False)">
+							 <span t-att-style="style" t-esc="account['debit']" />
+						</td>
+						<td class="text-left" t-if="(account['with_partner']==False) and (account['decimal_precision'])">
 							 <span t-att-style="style" t-esc="account['debit']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
 						</td>
+
+
 
 						<td class="text-right" t-if="account['with_partner']==True">
 							 <span  style="color:gray !important;" t-esc="account['debit']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>

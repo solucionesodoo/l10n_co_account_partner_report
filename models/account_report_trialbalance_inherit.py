@@ -20,6 +20,25 @@ reload(sys)
 sys.setdefaultencoding("utf-8")
 
 
+
+class AccountingReportInherit(models.TransientModel):
+	_inherit = "accounting.report"
+
+
+	display_account = fields.Selection([('all','All'), ('movement','With movements'), 
+										('not_zero','With balance is not equal to 0'), 
+										('with_partner','¿Incluir Partner?')], 
+										string='Display Accounts', required=True, default='movement')
+
+	decimal_precision = fields.Boolean(u'Agregar Precisión Decimal')
+
+	@api.multi
+	def pre_print_report(self, data):
+		data['form'].update(self.read(['display_account'])[0])
+		return data
+
+AccountingReportInherit()
+
 class AccountCommonAccountReport(models.TransientModel):
 	_inherit = 'account.common.account.report'
 
@@ -36,6 +55,7 @@ class AccountCommonAccountReport(models.TransientModel):
 		return data
 
 AccountCommonAccountReport()
+
 
 
 class ReportTrialBalanceInherit(models.AbstractModel):

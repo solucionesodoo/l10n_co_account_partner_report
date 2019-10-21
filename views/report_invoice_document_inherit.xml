@@ -1,8 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <record id="accounting_report_inherit_view" model="ir.ui.view">
+        <field name="name">Accounting Report</field>
+        <field name="model">accounting.report</field>
+        <field name="inherit_id" ref="account.accounting_report_view"/>
+        <field name="arch" type="xml">
+            <field name="account_report_id" position="after">
 
+                <field name="display_account" widget="radio"/>
 
+                <newline/>
+                <field name="document" readonly="1" filename='filename'/>
+                <field name="filename" readonly="1" invisible="1"/>
+                <field name="decimal_precision"/>
+            </field>
+
+        </field>
+    </record>
+
+<!--
 	<record id="account_common_report_view_inherit" model="ir.ui.view">
 		<field name="name">Common Report Inherit</field>
 		<field name="model">account.common.report</field>
@@ -12,14 +29,13 @@
 			<xpath expr="//group[1]//field[1]" position="before">
 				<field name="document" readonly="1" filename='filename'/>
 				<field name="filename" readonly="1" invisible="1"/>
-			</xpath>
-
-	
+                <field name="decimal_precision"/>
+			</xpath>	
 
 		</field>
 	</record>
 
-<!--
+
 
     <record id="account.account_common_report_view" model="ir.ui.view">
         <field name="name">Common Report</field>

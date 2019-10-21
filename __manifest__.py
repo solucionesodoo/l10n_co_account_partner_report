@@ -22,6 +22,7 @@
 #
 ##############################################################################
 
+
 {
 	"name": "Account Partner Report",
 	"author": "Brayhan Andres Jaramillo Castaño",

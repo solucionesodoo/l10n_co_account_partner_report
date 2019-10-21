@@ -25,11 +25,30 @@ sys.setdefaultencoding("utf-8")
 
 from odoo.exceptions import UserError, RedirectWarning, ValidationError
 
+
+
+
 class AccountCommonReportInherit(models.TransientModel):
-	_inherit = 'account.common.report'
+	_inherit = 'account.common.account.report'
 
 	filename = fields.Char('Filename')
 	document = fields.Binary(string = 'Descargar Excel')
+	decimal_precision = fields.Boolean(u'Agregar Precisión Decimal')
+
+	
+AccountCommonReportInherit()
+
+
+
+
+class AccountCommonReportInherit(models.TransientModel):
+	_inherit = 'account.common.report'
+
+
+
+	filename = fields.Char('Filename')
+	document = fields.Binary(string = 'Descargar Excel')
+	decimal_precision = fields.Boolean(u'Agregar Precisión Decimal')
 
 	
 AccountCommonReportInherit()
@@ -40,31 +59,31 @@ class AccountingReportInherit(models.TransientModel):
 	_inherit = "accounting.report"
 
 
+	filename = fields.Char('Filename')
+	document = fields.Binary(string = 'Descargar Excel')
+	decimal_precision = fields.Boolean(u'Agregar Precisión Decimal')
+
 	display_account = fields.Selection([('all','Todo'), 
 		('movement','Con Movimientos'), 
 		('not_zero','Con balance no es igual a 0'), 
-		('with_partner','¿Incluir Partner?'),], 
+		('with_partner','¿Incluir Partner?')], 
 		string='Mostrar Cuentas', required=True, default='movement')
-	print_excel = fields.Boolean('¿Imprimir Excel?')
+
 
 	
 	@api.multi
 	def pre_print_report(self, data):
 		data['form'].update(self.read(['display_account'])[0])
-		data['form'].update(self.read(['print_excel'])[0])
+		data['form'].update(self.read(['decimal_precision'])[0])
 		return data
 
-	@api.multi
-	def print_report_excel(self):
-		_logger.info('hola')
 
-		self.display_account = 'with_partner'
 	@api.multi
 	def check_report(self):
 
 		res = super(AccountingReportInherit, self).check_report()
 		data = {}
-		data['form'] = self.read(['account_report_id', 'date_from_cmp', 'date_to_cmp', 'journal_ids', 'filter_cmp', 'target_move', 'display_account', 'print_excel'])[0]
+		data['form'] = self.read(['account_report_id', 'date_from_cmp', 'date_to_cmp', 'journal_ids', 'filter_cmp', 'target_move', 'display_account', 'decimal_precision'])[0]
 		for field in ['account_report_id']:
 			if isinstance(data['form'][field], tuple):
 				data['form'][field] = data['form'][field][0]
@@ -74,7 +93,7 @@ class AccountingReportInherit(models.TransientModel):
 		return res
 
 	def _print_report(self, data):
-		data['form'].update(self.read(['date_from_cmp', 'debit_credit', 'date_to_cmp', 'filter_cmp', 'account_report_id', 'enable_filter', 'label_filter', 'target_move', 'display_account', 'print_excel'])[0])
+		data['form'].update(self.read(['date_from_cmp', 'debit_credit', 'date_to_cmp', 'filter_cmp', 'account_report_id', 'enable_filter', 'label_filter', 'target_move', 'display_account', 'decimal_precision'])[0])
 
 		return self.env['report'].get_action(self, 'account.report_financial', data=data)
 
@@ -113,14 +132,14 @@ class ReportFinancialInherit(models.AbstractModel):
 				'account_type': report.type or False, #used to underline the financial report balances
 			}
 			vals['with_partner']= False
-			vals['print_excel']= False
+			vals['decimal_precision']= False
 			if data['display_account'] == 'with_partner':
 
 				_logger.info('escogio partner')
 				vals['with_partner']= True
 
-			if data['print_excel']:
-				vals['print_excel']= True
+			if data['decimal_precision']:
+				vals['decimal_precision']= True
 
 			if data['debit_credit']:
 				vals['debit'] = res[report.id]['debit']
@@ -152,13 +171,13 @@ class ReportFinancialInherit(models.AbstractModel):
 						'account_type': account.internal_type,
 					}
 					vals['with_partner']= False
-					vals['print_excel']= False
+					vals['decimal_precision']= False
 					if data['display_account'] == 'with_partner':
 						_logger.info('escogio partner')
 						vals['with_partner']= True
 
-					if data['print_excel']:
-						vals['print_excel']= True
+					if data['decimal_precision']:
+						vals['decimal_precision']= True
 
 					if data['debit_credit']:
 						vals['debit'] = value['debit']
@@ -190,7 +209,8 @@ class ReportFinancialInherit(models.AbstractModel):
 				'account_type': account_type,
 				'level': level,
 				'type': type_account,
-				'account_id': account_id
+				'account_id': account_id,
+				'decimal_precision': False,
 				}
 
 		return vals
@@ -222,29 +242,90 @@ class ReportFinancialInherit(models.AbstractModel):
 						group_data_move_line = model_account_move_line.sudo().read_group([('account_id', '=', x['account_id'])], fields = [u'debit',u'credit', u'balance', u'name', 'account_id', 'partner_id'], groupby = [u'account_id',u'partner_id'], orderby = 'account_id asc', lazy = False)
 
 						if group_data_move_line:
-							
+
 							for record in group_data_move_line:
-								identification= self.env['res.partner'].search([('id', '=', record['partner_id'][0])]).xidentification
-								credit= 0
-								debit= 0
-								balance= record['balance']
-								name= identification + ' ' + record['partner_id'][1]
+								if record['partner_id']:
+									identification= self.env['res.partner'].search([('id', '=', record['partner_id'][0])]).xidentification
+									credit= 0
+									debit= 0
+									balance= record['balance']
+									name= identification + ' ' + record['partner_id'][1]
 
-								if ('debit' in x) and ('credit' in x):
+									if ('debit' in x) and ('credit' in x):
 
-									credit= record['credit']
-									debit= record['debit']
+										credit= record['credit']
 
-								data_report_lines.append(self.return_vals(name, credit, debit, balance, True, x['account_type'], x['level'], x['type'], x['account_id']))
+										debit= record['debit']
+
+									data_report_lines.append(self.return_vals(name, credit, debit, balance, True, x['account_type'], x['level'], x['type'], x['account_id']))
 
 		return data_report_lines
 
 
 	"""
-		Esta funcion retorna el tipo de display_account que se ha seleccionado
-	"""
-	def return_string_display_account(self, display_account):
+		def return_data_with_partner(self, report_lines):
 
+			model_account_move_line= self.env['account.move.line']
+			data_report_lines=[]
+
+			for x in report_lines:
+
+				if x['with_partner']:
+
+					if x['balance'] != 0:
+
+						if 'account_id' in x:
+
+							credit= 0
+							debit= 0
+						
+							if ('debit' in x) and ('credit' in x):
+
+								credit= x['credit']
+								debit= x['debit']
+						
+							data_report_lines.append(self.return_vals(x['name'], credit, debit, x['balance'], False, x['account_type'], x['level'], x['type'], x['account_id']))
+
+
+
+							group_data_move_line = model_account_move_line.sudo().read_group([('account_id', '=', x['account_id'])], fields = [u'debit',u'credit', u'balance', u'name', 'account_id', 'partner_id'], groupby = [u'account_id',u'partner_id'], orderby = 'account_id asc', lazy = False)
+
+							if group_data_move_line:
+
+								_logger.info('asdfghjklasdfghjk')
+
+								_logger.info(group_data_move_line)
+								_logger.info(group_data_move_line[0]['partner_id'])
+								
+								for record in group_data_move_line:
+
+									if 'partner_id' in record:
+										if record['partner_id']:
+											identification= self.env['res.partner'].search([('id', '=', record['partner_id'][0])]).xidentification or ''
+											credit= 0 
+											debit= 0
+											balance= record['balance']
+											name= (identification or False) + ' ' + record['partner_id'][1]
+
+											if ('debit' in x) and ('credit' in x):
+
+												credit= record['credit']
+												debit= record['debit']
+
+											data_report_lines.append(self.return_vals(name, credit, debit, balance, True, x['account_type'], x['level'], x['type'], x['account_id']))
+										else:
+											_logger.info('No se encontraron partner en los asientos')
+			return data_report_lines
+	"""
+
+
+
+
+	def return_string_display_account(self, display_account):
+		
+		"""
+			Esta funcion retorna el tipo de display_account que se ha seleccionado
+		"""
 		return_string=""
 
 		if display_account:
@@ -333,25 +414,25 @@ class ReportFinancialInherit(models.AbstractModel):
 	def return_information_company(self):
 		company_id = self.env.user.company_id
 		name = company_id.name
-		nit = company_id.partner_id.formatedNit
-		street = company_id.street
-		email = company_id.email
-		city = company_id.partner_id.xcity.name
-		state = company_id.partner_id.state_id.name
-		city_state = state + ' ' + city
-		country_id = company_id.country_id.name
-		phone = company_id.phone
-		website = company_id.website
+		nit = (company_id.partner_id.formatedNit or '')
+		street = (company_id.street or '')
+		email = (company_id.email or '')
+		city = (company_id.partner_id.xcity.name or '')
+		state = (company_id.partner_id.state_id.name or '')
+		city_state = (state or '') + ' ' + (city or '')
+		country_id = (company_id.country_id.name or '')
+		phone = (company_id.phone or '')
+		website = (company_id.website or '')
 
 		vals = {
 			'name': name,
-			'nit': 'Nit: ' +  nit,
-			'street': street + ' ' + company_id.street2,
-			'email': email,
-			'city_state': city_state,
-			'country_id': country_id,
-			'phone': phone,
-			'website': website
+			'nit': ('Nit: ' + nit) or '',
+			'street': (street or '') + ' ' + (company_id.street2 or ''),
+			'email': email or '',
+			'city_state': city_state or '',
+			'country_id': country_id or '',
+			'phone': phone or '',
+			'website': website or ''
 		}
 
 		return vals
@@ -432,7 +513,9 @@ class ReportFinancialInherit(models.AbstractModel):
 			format="%Y-%m-%d %H:%M:00"
 			now=fields.Datetime.context_timestamp(self, fields.Datetime.from_string(fields.Datetime.now()))
 			date_today=str(datetime.strftime(now, format))
-			worksheet.write('F1', "Fecha Creacion", header_format)
+			date_create= unicode(str("Fecha Creación").encode("utf8"))
+			date_create= date_create.encode('utf-8')
+			worksheet.write('F1', date_create, header_format)
 			worksheet.write('F2', date_today, bold)
 
 			if len(data_report['data_account']) > 0:
@@ -458,7 +541,8 @@ class ReportFinancialInherit(models.AbstractModel):
 					if x['with_partner']:
 						format_letter = letter_gray 
 						worksheet.write(row,col, cadena or '', letter_gray_name)
-
+source ~/odoo-12.0/bin/activate
+ 1067  export LC_ALL=en_US.UTF-8
 					else:
 
 						format_letter = letter_black
@@ -487,6 +571,25 @@ class ReportFinancialInherit(models.AbstractModel):
 			self_id= x.id
 			x.write({'document':base64.encodestring(file_data.read()), 'filename':Header_Text+'.xlsx'})
 			
+
+	def return_data_without_decimal(self, report_lines):
+
+		if report_lines:
+
+			for x in report_lines:
+
+				if 'balance' in x:
+					x['balance']= int(x['balance'])
+
+				if 'credit' in x:
+					x['credit']= int(x['credit'])
+
+				if 'debit' in x:
+					x['debit']= int(x['debit'])
+
+		return report_lines
+
+			
 	@api.model
 	def render_html(self, docids, data=None):
 		if not data.get('form') or not self.env.context.get('active_model') or not self.env.context.get('active_id'):
@@ -499,19 +602,48 @@ class ReportFinancialInherit(models.AbstractModel):
 
 
 		aux=[]
+
+		_logger.info('El decimal precision es')
+		_logger.info(docs['decimal_precision'])
+
+		"""
+				if docs['decimal_precision']:
+					_logger.info('seleccionado')
+
+					_logger.info(report_lines)
+				else:
+
+					report_lines = self.return_data_without_decimal(report_lines)
+
+		"""
+		_logger.info('en teoria deberia ser esto')
+		_logger.info(report_lines)
 		for y in docs:
+
 			if y['display_account'] == 'not_zero':
 				for x in report_lines:
 					if x['balance'] != 0:
 						aux.append(x)
 
 			elif y['display_account'] == 'with_partner':
+				if len(self.return_data_with_partner(report_lines)) > 0:
 
-				aux= self.return_data_with_partner(report_lines)
+					aux= self.return_data_with_partner(report_lines)
+
+					_logger.info('entrando ando')
+				else:
+					_logger.info('----------------')
+					aux=report_lines
+
 
 			else:
 				aux=report_lines
 
+
+
+
+		_logger.info('esto es lo que resulta')
+		_logger.info(aux)
 		docargs = {
 			'doc_ids': self.ids,
 			'doc_model': self.model,
@@ -521,7 +653,10 @@ class ReportFinancialInherit(models.AbstractModel):
 			'get_account_lines': aux,
 		}
 
+
+		_logger.info('el docargs es')
 		_logger.info(docargs)
+
 		self.generate_excel(docargs, docargs['data']['account_report_id'][1], docargs['get_account_lines'], docargs['data']['debit_credit'])
 
 		return self.env['report'].render('account.report_financial', docargs)
