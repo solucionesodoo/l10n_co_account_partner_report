@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<template id="account.report_trialbalance">
+    <t t-call="report.html_container">
+        <t t-call="report.external_layout">
+            <div class="page">
+                <h2><span t-esc="res_company.name"/>: Trial Balance</h2>
+
+                <div class="row mt32">
+                    <div class="col-xs-4">
+                        <strong>Display Account:</strong>
+                        <p>
+                            <span t-if="data['display_account'] == 'all'">All accounts</span>
+                            <span t-if="data['display_account'] == 'movement'">With movements</span>
+                            <span t-if="data['display_account'] == 'not_zero'">With balance not equal to zero</span>
+                        </p>
+                    </div>
+                    <div class="col-xs-4">
+                        <p>
+                            <t t-if="data['date_from']"><strong>Date from :</strong> <span t-esc="data['date_from']"/><br/></t>
+                            <t t-if="data['date_to']"><strong>Date to :</strong> <span t-esc="data['date_to']"/></t>
+                        </p>
+                    </div>
+                    <div class="col-xs-4">
+                        <strong>Target Moves:</strong>
+                        <p>
+                            <span t-if="data['target_move'] == 'all'">All Entries</span>
+                            <span t-if="data['target_move'] == 'posted'">All Posted Entries</span>
+                        </p>
+                    </div>
+                </div>
+
+			<table class="table table-condensed">
+				<thead>
+					<tr>
+						<th>Código</th>
+						<th>Cuenta</th>
+						<th class="text-right">Debe</th>
+						<th class="text-right">Haber</th>
+						<th class="text-right">Saldo Pendiente</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr t-foreach="Accounts" t-as="account">
+
+						<td t-if="account['with_partner']==False" class="text-left">
+							<span t-att-style="style" t-esc="account['code']"/>
+						</td>
+
+						<td t-if="account['with_partner']==True" class="text-right">
+							<span style="color: white;" t-esc="'..'"/>
+							<span t-esc="account['code']" style="color:grey !important;"/>
+						</td>
+
+						<td t-if="account['with_partner']==False" class="text-left">							<span t-att-style="style" t-esc="account['name']"/>
+						</td>
+
+						<td t-if="account['with_partner']==True" class="text-left">
+							<span style="color:grey !important;" t-esc="account['name']"/>
+						</td>
+
+						<td class="text-left" t-if="account['with_partner']==False">
+							 <span t-att-style="style" t-esc="account['debit']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+						</td>
+
+						<td class="text-right" t-if="account['with_partner']==True">
+							 <span  style="color:gray !important;" t-esc="account['debit']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+						</td>
+
+						<td class="text-left" t-if="account['with_partner']==False">
+							<span t-att-style="style" t-esc="account['credit']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+						</td>
+
+						<td class="text-right" t-if="account['with_partner']==True">
+							<span style="color:gray !important;" t-esc="account['credit']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+						</td>
+
+						<td class="text-left" t-if="account['with_partner']==False">
+							<span t-att-style="style" t-esc="account['balance']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+						</td>
+
+						<td class="text-right" t-if="account['with_partner']==True">
+							<span style="color:grey !important;" t-esc="account['balance']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+						</td>
+
+					</tr>
+				</tbody>
+			</table>
+            </div>
+        </t>
+    </t>
+</template>
+</odoo>
