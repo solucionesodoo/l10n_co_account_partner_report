@@ -25,7 +25,7 @@
 {
 	"name": "Account Partner Report",
 	"author": "Brayhan Andres Jaramillo Castaño",
-	"version": "10.0",
+	"version": "12.0",
 	"summary": "",
 	"category": "Report",
 	'description': """
